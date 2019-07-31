@@ -8,6 +8,10 @@
         <PackageVersion>1.0.0</PackageVersion>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" $(TargetFramework) == 'monoandroid90' ">
+        <DefineConstants>ANDROID9</DefineConstants>
+    </PropertyGroup>
+
     <PropertyGroup Condition="'$(TargetFrameworkOverride)' != ''">
         <TargetFrameworks>$(TargetFrameworkOverride)</TargetFrameworks>
     </PropertyGroup>

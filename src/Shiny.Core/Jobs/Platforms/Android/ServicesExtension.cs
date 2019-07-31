@@ -30,8 +30,9 @@ namespace Shiny.Jobs
         public static void StartJobService(this AndroidContext context)
         {
             var sch = context.NativeScheduler();
-            if (!sch.AllPendingJobs.Any(x => x.Id == ANDROID_JOB_ID))
+            if (sch.AllPendingJobs.All(x => x.Id != ANDROID_JOB_ID))
             {
+#if !ANDROID9
                 var job = new Android.App.Job.JobInfo.Builder(
                         ANDROID_JOB_ID,
                         new ComponentName(
@@ -44,6 +45,7 @@ namespace Shiny.Jobs
                     .Build();
 
                 sch.Schedule(job);
+#endif
             }
         }
     }

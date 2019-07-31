@@ -1,12 +1,11 @@
 ﻿#if ANDROID9
-using System.Linq;
-using System.Threading;
-using Android.Runtime;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Android.Content;
+using Android.Runtime;
 using AndroidX.Work;
-
+using Log = Android.Util.Log;
 
 namespace Shiny.Jobs
 {
@@ -26,15 +25,34 @@ namespace Shiny.Jobs
         {
             this.cancelSrc = new CancellationTokenSource();
 
-            var results = Task.Run(() => ShinyHost
-                .Resolve<IJobManager>()
-                .RunAll(this.cancelSrc.Token)).GetAwaiter().GetResult().ToList();
-            if (results.Any(x => !x.Success))
+            var jobManager = ShinyHost.Resolve<IJobManager>();
+            var failed = false;
+
+            foreach (var tag in this.Tags)
             {
-                return Result.InvokeFailure();
+                try
+                {
+                    var job = Task.Run(() => jobManager.GetJob(tag)).Result;
+                    if (job is null)
+                    {
+                        continue;
+                    }
+
+                    var result = Task.Run(() => jobManager.Run(job.Identifier, this.cancelSrc.Token)).Result;
+                    if (!result.Success)
+                    {
+                        failed = true;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Error(tag, e.Message);
+
+                    failed = false;
+                }
             }
 
-            return Result.InvokeSuccess();
+            return failed ? Result.InvokeFailure() : Result.InvokeSuccess();
         }
 
         public override void OnStopped()

@@ -56,14 +56,15 @@ namespace Shiny.Jobs
                 .Build();
 
             var data = new Data.Builder();
-            foreach (var parameter in jobInfo.Parameters)
-                data.Put(parameter.Key, parameter.Value);
+            //foreach (var parameter in jobInfo.Parameters)
+            //    data.Put(parameter.Key, parameter.Value);
 
             if (jobInfo.Repeat)
             {
                 var request = PeriodicWorkRequest
                     .Builder
                     .From<ShinyJobWorker>(TimeSpan.FromMinutes(20))
+                    .AddTag(jobInfo.Identifier)
                     .SetConstraints(constraints)
                     .SetInputData(data.Build())
                     .Build();
@@ -76,10 +77,15 @@ namespace Shiny.Jobs
             }
             else
             {
-                var worker = new OneTimeWorkRequest.Builder()
+                var request = OneTimeWorkRequest
+                    .Builder
+                    .From<ShinyJobWorker>()
+                    .AddTag(jobInfo.Identifier)
                     .SetInputData(data.Build())
-                    .SetConstraints(constraints);
+                    .SetConstraints(constraints)
+                    .Build();
 
+                WorkManager.Instance.Enqueue(request);
             }
         }
 
